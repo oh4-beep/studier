@@ -202,7 +202,7 @@ async function importJSONFile(file){
 
 // ======= LOGIN/SYNC =======
 let CURRENT_USER = null;
-const API = "http://localhost:4000";
+const API = "https://studier-w78p.onrender.com";
 
 async function signup(username, password){
   const res = await fetch(API+"/signup", {
