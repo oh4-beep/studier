@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="color-scheme" content="dark">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Studier – All-in-One Schoolwork Organizer</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="brand">📚 Studier</div>
+    <div class="year-switcher">
+      <label for="yearSelect">Year</label>
+      <select id="yearSelect"></select>
+      <button class="btn secondary small" id="addYearBtn">+ New Year</button>
+    </div>
+    <nav class="nav">
+      <button data-section="dashboard" class="nav-item active">Dashboard</button>
+      <button data-section="tasks" class="nav-item">Assignments</button>
+      <button data-section="grades" class="nav-item">Grades</button>
+      <button data-section="reminders" class="nav-item">Reminders</button>
+      <button data-section="journal" class="nav-item">Journal</button>
+      <button data-section="settings" class="nav-item">Settings</button>
+    </nav>
+    <div class="footer-note">Made for students ✨</div>
+  </aside>
+
+  <div class="app">
+    <header class="topbar">
+      <div class="crumbs"><span id="sectionTitle">Dashboard</span></div>
+      <div class="quick-actions">
+        <button class="btn primary" id="quickAddTask">+ Add Task</button>
+        <button class="btn ghost" id="quickSeeGrades">See Grades</button>
+        <button class="btn ghost" id="quickReminders">Reminders</button>
+      </div>
+    </header>
+
+    <main class="content">
+
+      <!-- DASHBOARD -->
+      <section id="dashboard" class="page active">
+        <div class="grid grid-3">
+          <div class="card ring-card">
+            <div class="ring-wrap">
+              <svg viewBox="0 0 120 120" class="ring">
+                <circle cx="60" cy="60" r="52" class="ring-track"></circle>
+                <circle cx="60" cy="60" r="52" class="ring-progress" id="ringProgress" pathLength="100"></circle>
+              </svg>
+              <div class="ring-center">
+                <div class="avg" id="avgGradeRing">–</div>
+                <div class="sub">Average</div>
+              </div>
+            </div>
+            <div class="ring-meta">
+              <div><span class="dot blue"></span><b id="completionPct">0%</b> done</div>
+              <div><span class="dot teal"></span><b id="pendingCount">0</b> pending</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>Upcoming (next 7 days)</h3>
+            <ul class="list" id="upcomingList"></ul>
+          </div>
+
+          <div class="card">
+            <h3>Achievements</h3>
+            <ul class="list" id="achievementsList"></ul>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Planner</h3>
+          <div class="planner">
+            <div class="planner-head">
+              <button class="btn tiny ghost" id="prevMonth">‹</button>
+              <div id="calendarTitle"></div>
+              <button class="btn tiny ghost" id="nextMonth">›</button>
+            </div>
+            <div class="calendar" id="calendarGrid"></div>
+            <div class="planner-summary" id="plannerSummary"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TASKS -->
+      <section id="tasks" class="page">
+        <div class="card">
+          <div class="row-between">
+            <h3>Assignments & Tests</h3>
+            <div class="row">
+              <select id="taskSort">
+                <option value="urgency">Sort: Urgency</option>
+                <option value="subject">Sort: Subject</option>
+                <option value="created">Sort: Created</option>
+              </select>
+              <select id="taskFilter">
+                <option value="all">All</option>
+                <option value="homework">Homework</option>
+                <option value="project">Project</option>
+                <option value="test">Test</option>
+                <option value="overdue">Overdue</option>
+                <option value="done">Completed</option>
+              </select>
+              <input id="taskSearch" placeholder="Search title or notes"/>
+              <button class="btn primary" id="addTaskBtn">+ Add</button>
+            </div>
+          </div>
+          <ul class="task-list" id="taskList"></ul>
+        </div>
+        <div class="grid grid-2">
+          <div class="card">
+            <h3>History (Completed)</h3>
+            <ul class="list" id="historyList"></ul>
+          </div>
+          <div class="card">
+            <h3>Subjects</h3>
+            <div class="subject-list" id="subjectList"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- GRADES -->
+      <section id="grades" class="page">
+        <div class="row-between">
+          <h3>Grades & Progress</h3>
+          <div class="row">
+            <select id="gradeViewMode">
+              <option value="year">Current Year</option>
+              <option value="all">All-Time</option>
+            </select>
+            <button class="btn primary" id="addGradeBtn">+ Add Grade</button>
+          </div>
+        </div>
+
+        <div class="grid grid-2">
+          <div class="card">
+            <h4>Subject Averages</h4>
+            <div id="gradeBars"></div>
+          </div>
+          <div class="card">
+            <h4>Yearly Breakdown</h4>
+            <div id="yearBreakdown"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- REMINDERS -->
+      <section id="reminders" class="page">
+        <div class="row-between">
+          <h3>Study Reminders</h3>
+          <button class="btn primary" id="addReminderBtn">+ New Reminder</button>
+        </div>
+        <div class="card">
+          <ul class="list" id="reminderList"></ul>
+        </div>
+        <div class="card">
+          <h4>Daily & Weekly Summaries</h4>
+          <div id="summaryBlocks" class="grid grid-2"></div>
+        </div>
+      </section>
+
+      <!-- JOURNAL -->
+      <section id="journal" class="page">
+        <div class="row-between">
+          <h3>Multi-Year Academic Journal</h3>
+          <button class="btn primary" id="addYearBtn2">+ Add Year</button>
+        </div>
+        <div class="card">
+          <ul class="list" id="journalList"></ul>
+        </div>
+      </section>
+
+      <!-- SETTINGS -->
+      <section id="settings" class="page">
+        <div class="card">
+          <h3>Backup & Restore</h3>
+          <div class="row">
+            <button class="btn primary" id="exportBtn">Export JSON</button>
+            <input type="file" id="importFile" accept="application/json"/>
+            <button class="btn secondary" id="importBtn">Import</button>
+          </div>
+          <p class="muted">Your data is stored locally in your browser (localStorage).</p>
+        </div>
+        <div class="card">
+          <h3>Notifications</h3>
+          <button class="btn" id="askNotify">Enable Notifications</button>
+          <p class="muted" id="notifyStatus">Status: unknown</p>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ========== MODALS ========== -->
+  <dialog id="taskModal" class="modal">
+    <form method="dialog" id="taskForm" class="form">
+      <h3 id="taskFormTitle">Add Task</h3>
+      <div class="grid grid-2">
+        <label>Title<input id="taskTitle" required/></label>
+        <label>Type
+          <select id="taskType">
+            <option value="homework">Homework</option>
+            <option value="project">Project</option>
+            <option value="test">Test</option>
+          </select>
+        </label>
+        <label>Subject<input id="taskSubject" list="subjectDatalist" required/></label>
+        <label>Due Date<input type="date" id="taskDue" required/></label>
+        <label>Priority
+          <select id="taskPriority">
+            <option value="normal">Normal</option>
+            <option value="high">High</option>
+            <option value="low">Low</option>
+          </select>
+        </label>
+        <label>Reminder
+          <input type="datetime-local" id="taskReminder"/>
+        </label>
+      </div>
+      <label>Notes<textarea id="taskNotes" rows="3"></textarea></label>
+      <label>Resources (comma-separated URLs)<input id="taskResources" placeholder="https://... , https://..."/></label>
+
+      <menu class="row-end">
+        <button class="btn secondary" value="cancel">Cancel</button>
+        <button class="btn primary" id="taskSaveBtn" value="default">Save</button>
+      </menu>
+      <input type="hidden" id="taskEditingId">
+    </form>
+  </dialog>
+
+  <dialog id="gradeModal" class="modal">
+    <form method="dialog" id="gradeForm" class="form">
+      <h3>Add Grade</h3>
+      <div class="grid grid-2">
+        <label>Subject<input id="gradeSubject" list="subjectDatalist" required/></label>
+        <label>Type
+          <select id="gradeType">
+            <option value="assignment">Assignment</option>
+            <option value="test">Test</option>
+          </select>
+        </label>
+        <label>Score %<input type="number" id="gradeValue" min="0" max="100" required/></label>
+        <label>Date<input type="date" id="gradeDate" required/></label>
+      </div>
+      <menu class="row-end">
+        <button class="btn secondary" value="cancel">Cancel</button>
+        <button class="btn primary" value="default">Save</button>
+      </menu>
+    </form>
+  </dialog>
+
+  <dialog id="yearModal" class="modal">
+    <form method="dialog" id="yearForm" class="form">
+      <h3>Add School Year</h3>
+      <div class="grid grid-2">
+        <label>Label (e.g., 8th Grade – 2025)
+          <input id="yearName" required/>
+        </label>
+        <label>Grade Level (1–12)
+          <input id="yearLevel" type="number" min="1" max="12" required/>
+        </label>
+        <label>Start Date<input type="date" id="yearStart" required/></label>
+        <label>End Date<input type="date" id="yearEnd" required/></label>
+      </div>
+      <menu class="row-end">
+        <button class="btn secondary" value="cancel">Cancel</button>
+        <button class="btn primary" value="default">Create</button>
+      </menu>
+    </form>
+  </dialog>
+
+  <dialog id="reminderModal" class="modal">
+    <form method="dialog" id="reminderForm" class="form">
+      <h3>New Reminder</h3>
+      <div class="grid grid-2">
+        <label>Text<input id="reminderText" required/></label>
+        <label>When<input type="datetime-local" id="reminderWhen" required/></label>
+      </div>
+      <menu class="row-end">
+        <button class="btn secondary" value="cancel">Cancel</button>
+        <button class="btn primary" value="default">Save</button>
+      </menu>
+    </form>
+  </dialog>
+
+  <datalist id="subjectDatalist"></datalist>
+
+  <script src="data.js"></script>
+  <script src="tasks.js"></script>
+  <script src="grades.js"></script>
+  <script src="reminders.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
