@@ -1,7 +1,7 @@
 {
-    "name": "studier-backend",
+    "name": "studier",
     "version": "1.0.0",
-    "description": "Backend for Studier schoolwork organizer",
+    "description": "Studier web app + backend",
     "main": "server.js",
     "scripts": {
       "start": "node server.js"
