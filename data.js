@@ -199,6 +199,42 @@ async function importJSONFile(file){
   STORE = obj; saveState(STORE);
 }
 
+
+// ======= LOGIN/SYNC =======
+let CURRENT_USER = null;
+const API = "http://localhost:4000";
+
+async function signup(username, password){
+  const res = await fetch(API+"/signup", {
+    method:"POST", headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({username,password})
+  });
+  return res.json();
+}
+
+async function login(username, password){
+  const res = await fetch(API+"/login", {
+    method:"POST", headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({username,password})
+  });
+  const data = await res.json();
+  if (data.success){
+    CURRENT_USER = username;
+    STORE = data.data || STORE; // load server data
+    saveRemote();
+  }
+  return data;
+}
+
+function saveRemote(){
+  if (!CURRENT_USER) return;
+  fetch(API+"/save", {
+    method:"POST", headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({username: CURRENT_USER, data: STORE})
+  });
+}
+
+
 // ======= Summaries =======
 function dailySummary(dateISO){
   const y = currentYear();
