@@ -11,11 +11,24 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="Studier">
   <link rel="apple-touch-icon" href="icon-192.png">
-
 </head>
 <body>
   <aside class="sidebar">
     <div class="brand">📚 Studier</div>
+
+    <!-- Account (NEW) -->
+    <div class="card" style="padding:12px">
+      <div class="row-between">
+        <div class="muted">Account</div>
+        <span id="authStatus" class="tag">Signed out</span>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <button class="btn small" id="openAuthBtn">Login / Signup</button>
+        <button class="btn small ghost" id="logoutBtn" style="display:none">Log out</button>
+      </div>
+      <div class="muted" id="whoami" style="margin-top:6px"></div>
+    </div>
+
     <div class="year-switcher">
       <label for="yearSelect">Year</label>
       <select id="yearSelect"></select>
@@ -186,7 +199,7 @@
             <input type="file" id="importFile" accept="application/json"/>
             <button class="btn secondary" id="importBtn">Import</button>
           </div>
-          <p class="muted">Your data is stored locally in your browser (localStorage).</p>
+          <p class="muted">Your data is stored locally in your browser (localStorage). If you sign in, it also syncs to the cloud.</p>
         </div>
         <div class="card">
           <h3>Notifications</h3>
@@ -286,6 +299,23 @@
       <menu class="row-end">
         <button class="btn secondary" value="cancel">Cancel</button>
         <button class="btn primary" value="default">Save</button>
+      </menu>
+    </form>
+  </dialog>
+
+  <!-- AUTH MODAL (NEW) -->
+  <dialog id="authModal" class="modal">
+    <form method="dialog" id="authForm" class="form">
+      <h3>Login / Signup</h3>
+      <div class="grid grid-2">
+        <label>Username<input id="authUser" required/></label>
+        <label>Password<input id="authPass" type="password" required/></label>
+      </div>
+      <div id="authMsg" class="muted"></div>
+      <menu class="row-end">
+        <button class="btn secondary" value="cancel">Close</button>
+        <button class="btn" id="signupBtn" value="default">Signup</button>
+        <button class="btn primary" id="loginBtn" value="default">Login</button>
       </menu>
     </form>
   </dialog>

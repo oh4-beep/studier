@@ -1,7 +1,9 @@
-// ======= Persistence & Models =======
+// ======= Cloud + Local Persistence =======
+const API = "https://studier-w78p.onrender.com"; // Render backend URL
 const STORAGE_KEY = "studier.v1";
+let CURRENT_USER = null;
 
-// default subjects w/ colors & icons
+// default subjects
 const DEFAULT_SUBJECTS = [
   { name: "Math", color: "#3B82F6", icon: "📘" },
   { name: "Science", color: "#10B981", icon: "📗" },
@@ -16,7 +18,7 @@ const fmtDate = iso => new Date(iso).toLocaleDateString();
 const withinDays = (iso, days) => {
   const d = new Date(iso), now = new Date();
   const diff = (d - now) / (1000*60*60*24);
-  return diff <= days && diff >= -365; // window
+  return diff <= days && diff >= -365;
 };
 const isOverdue = iso => new Date(iso) < new Date() && !sameDay(iso, new Date());
 const sameDay = (isoOrDate, date) => {
@@ -40,7 +42,7 @@ function newYearTemplate() {
   };
 }
 
-function loadState() {
+function loadStateLocal() {
   const raw = localStorage.getItem(STORAGE_KEY);
   if (!raw) {
     const y = newYearTemplate();
@@ -50,19 +52,29 @@ function loadState() {
       createdAt: new Date().toISOString(),
       version: 1
     };
-    saveState(sample);
+    saveStateLocal(sample);
     return sample;
   }
-  try { return JSON.parse(raw); } catch { localStorage.removeItem(STORAGE_KEY); return loadState(); }
+  try { return JSON.parse(raw); } catch { localStorage.removeItem(STORAGE_KEY); return loadStateLocal(); }
 }
-function saveState(state) { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+function saveStateLocal(state) { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
 
-let STORE = loadState();
+async function saveRemote() {
+  if (!CURRENT_USER) return;
+  try {
+    await fetch(API + "/save", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ username: CURRENT_USER, data: STORE })
+    });
+  } catch {}
+}
+
+let STORE = loadStateLocal();
 
 function currentYear() { return STORE.years[STORE.currentYearId]; }
-function setCurrentYear(id){ STORE.currentYearId = id; saveState(STORE); }
+function setCurrentYear(id){ STORE.currentYearId = id; saveStateLocal(STORE); saveRemote(); }
 
-function upsertYear(y) { STORE.years[y.id] = y; saveState(STORE); populateYearSelect(); }
+function upsertYear(y) { STORE.years[y.id] = y; saveStateLocal(STORE); saveRemote(); populateYearSelect(); }
 function addYear({name, gradeLevel, startDate, endDate}) {
   const y = newYearTemplate();
   y.name = name; y.gradeLevel = Number(gradeLevel);
@@ -75,7 +87,7 @@ function ensureSubject(name) {
   const y = currentYear();
   if (!y.subjects.find(s => s.name.toLowerCase() === name.toLowerCase())) {
     y.subjects.push({ name, color: "#06B6D4", icon:"📒" });
-    saveState(STORE);
+    saveStateLocal(STORE); saveRemote();
   }
 }
 function subjectMeta(name) {
@@ -89,13 +101,13 @@ function addTask(t) {
   const task = { id: uid(), createdAt: new Date().toISOString(), completed:false, ...t };
   y.tasks.push(task);
   ensureSubject(task.subject);
-  saveState(STORE);
+  saveStateLocal(STORE); saveRemote();
   return task;
 }
 function editTask(id, patch) {
   const y = currentYear();
   const i = y.tasks.findIndex(t => t.id === id);
-  if (i >= 0) { y.tasks[i] = { ...y.tasks[i], ...patch }; saveState(STORE); }
+  if (i >= 0) { y.tasks[i] = { ...y.tasks[i], ...patch }; saveStateLocal(STORE); saveRemote(); }
 }
 function toggleDone(id, done=true) {
   const y = currentYear();
@@ -103,25 +115,23 @@ function toggleDone(id, done=true) {
   if (t) {
     t.completed = done;
     t.completedAt = done ? new Date().toISOString() : null;
-    // Achievements
     if (done) {
       y.achievements.totalCompleted++;
       const today = new Date();
       const last = y.achievements.lastDoneISO ? new Date(y.achievements.lastDoneISO) : null;
       if (!last || !sameDay(last, today)) {
-        // streak logic (simple)
         const yesterday = new Date(); yesterday.setDate(today.getDate()-1);
         y.achievements.streakDays = last && sameDay(last, yesterday) ? (y.achievements.streakDays+1) : 1;
         y.achievements.lastDoneISO = today.toISOString();
       }
     }
-    saveState(STORE);
+    saveStateLocal(STORE); saveRemote();
   }
 }
 function deleteTask(id){
   const y = currentYear();
   y.tasks = y.tasks.filter(t => t.id !== id);
-  saveState(STORE);
+  saveStateLocal(STORE); saveRemote();
 }
 function tasksUpcoming7() {
   return currentYear().tasks
@@ -134,7 +144,7 @@ function addGrade({subject, type, score, dateISO}) {
   const y = currentYear();
   y.grades.push({ id: uid(), subject, type, score: Number(score), dateISO });
   ensureSubject(subject);
-  saveState(STORE);
+  saveStateLocal(STORE); saveRemote();
 }
 function gradesBySubject(year) {
   const g = (year||currentYear()).grades;
@@ -161,18 +171,18 @@ function addReminder({text, whenISO}) {
   const y = currentYear();
   const r = { id: uid(), text, whenISO, enabled:true, createdAt:new Date().toISOString() };
   y.reminders.push(r);
-  saveState(STORE);
+  saveStateLocal(STORE); saveRemote();
   return r;
 }
 function toggleReminder(id, enabled){
   const y = currentYear();
   const r = y.reminders.find(r=>r.id===id);
-  if (r){ r.enabled = enabled; saveState(STORE); }
+  if (r){ r.enabled = enabled; saveStateLocal(STORE); saveRemote(); }
 }
 function deleteReminder(id){
   const y = currentYear();
   y.reminders = y.reminders.filter(r => r.id !== id);
-  saveState(STORE);
+  saveStateLocal(STORE); saveRemote();
 }
 
 // ======= Yearly Breakdown =======
@@ -196,44 +206,8 @@ async function importJSONFile(file){
   const text = await file.text();
   const obj = JSON.parse(text);
   if (!obj.years || !obj.currentYearId) throw new Error("Invalid backup file");
-  STORE = obj; saveState(STORE);
+  STORE = obj; saveStateLocal(STORE); saveRemote();
 }
-
-
-// ======= LOGIN/SYNC =======
-let CURRENT_USER = null;
-const API = "https://studier-w78p.onrender.com";
-
-async function signup(username, password){
-  const res = await fetch(API+"/signup", {
-    method:"POST", headers:{ "Content-Type":"application/json" },
-    body: JSON.stringify({username,password})
-  });
-  return res.json();
-}
-
-async function login(username, password){
-  const res = await fetch(API+"/login", {
-    method:"POST", headers:{ "Content-Type":"application/json" },
-    body: JSON.stringify({username,password})
-  });
-  const data = await res.json();
-  if (data.success){
-    CURRENT_USER = username;
-    STORE = data.data || STORE; // load server data
-    saveRemote();
-  }
-  return data;
-}
-
-function saveRemote(){
-  if (!CURRENT_USER) return;
-  fetch(API+"/save", {
-    method:"POST", headers:{ "Content-Type":"application/json" },
-    body: JSON.stringify({username: CURRENT_USER, data: STORE})
-  });
-}
-
 
 // ======= Summaries =======
 function dailySummary(dateISO){
@@ -243,7 +217,7 @@ function dailySummary(dateISO){
 }
 function weeklySummary(anchorISO){
   const d = new Date(anchorISO);
-  const start = new Date(d); start.setDate(d.getDate() - d.getDay()); // Sun
+  const start = new Date(d); start.setDate(d.getDate() - d.getDay());
   const y = currentYear();
   const inWeek = t => {
     const dt = new Date(t.dueISO);
@@ -266,4 +240,44 @@ function populateYearSelect(){
   });
 }
 
+// ======= AUTH (cloud sync) =======
+async function signup(username, password){
+  const res = await fetch(API+"/signup", {
+    method:"POST", headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({username,password})
+  });
+  const out = await res.json();
+  if (out.success){
+    CURRENT_USER = username;
+    // first-time users start with whatever’s in STORE; push it up
+    await saveRemote();
+  }
+  return out;
+}
+
+async function login(username, password){
+  const res = await fetch(API+"/login", {
+    method:"POST", headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({username,password})
+  });
+  const out = await res.json();
+  if (out.success){
+    CURRENT_USER = username;
+    if (out.data){
+      STORE = out.data;
+      saveStateLocal(STORE);
+    } else {
+      // user exists but empty data; upload local
+      await saveRemote();
+    }
+  }
+  return out;
+}
+
+function logout(){
+  CURRENT_USER = null;
+  // keep local copy so app still works offline
+}
+
+// expose helpers for other files
 document.addEventListener("DOMContentLoaded", populateYearSelect);
